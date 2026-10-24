@@ -21,7 +21,7 @@ TASK_TYPE = "key information extraction en"
 REQUIRED_FIELDS = ("id", "type", "dataset_name", "image_path", "question", "answers")
 
 
-def select_kie_examples(records, dataset_name=None, limit=None, seed=42):
+def select_kie_examples(records, dataset_name=None, limit=None, seed=42, ocr_data=None):
     """Return matching original records without changing their contents."""
     if not isinstance(records, list):
         raise ValueError("OCRBench annotations must be a JSON list")
