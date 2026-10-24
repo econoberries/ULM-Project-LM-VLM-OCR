@@ -1,82 +1,73 @@
 # Qwen3.5-9B — OCRBench v2 English KIE
 
-This implementation benchmarks the direct **document image + question → dictionary prediction** approach with [Qwen/Qwen3.5-9B](https://huggingface.co/Qwen/Qwen3.5-9B). It lives under `src/vlm/qwen35/` and does not change teammates' MiniCPM or OCR–LM code.
+This folder contains the original **direct image + question → dictionary prediction** runner for [Qwen/Qwen3.5-9B](https://huggingface.co/Qwen/Qwen3.5-9B), migrated from the previous repository.
 
-**Scope:** only benchmark task `key information extraction en`. `--dataset-name POIE` is optional. We deliberately exclude Chinese KIE and English key information *mapping* because the repository README specifies English KIE.
+The experiment covers **OCRBench v2 English key information extraction** (`key information extraction en`). This folder retains the historical `prepare_kie.py` and `summarize.py` for provenance; the standardized project uses `src/step_01_prepare/prepare_kie.py` and will later add shared scoring/summary scripts.
 
-## 1. Setup
+## 1. Python environment
 
-Run the following commands from the repository root. The existing `pyproject.toml`, `.python-version`, and `uv.lock` are the team's dependency specification.
+From the new repository root:
 
 ```bash
 uv sync --locked
-uv run python -m unittest discover -s src/vlm/qwen35 -p 'test_*.py' -v
+uv run python -m unittest discover -s src/step_02_vlm/qwen35 -p 'test_*.py' -v
 ```
 
-Download the OCRBench v2 dataset separately from [the official benchmark README](https://github.com/Yuliang-Liu/MultimodalOCR/tree/main/OCRBench_v2), then extract:
+Download OCRBench v2 separately following the [official benchmark repository](https://github.com/Yuliang-Liu/MultimodalOCR/tree/main/OCRBench_v2), and place it in `data/OCRBench_v2/`. Do not substitute the older `OCRBench.json` for `OCRBench_v2.json`.
 
-```text
-data/OCRBench_v2/
-  OCRBench_v2.json
-  EN_part/
-  CN_part/
-```
-
-The repository's `.gitignore` already excludes this dataset. The older `OCRBench.json` is not interchangeable with `OCRBench_v2.json`.
-
-## 2. Select a ten-example POIE pilot
+## 2. Prepare the shared 400-document benchmark
 
 ```bash
-uv run python src/vlm/qwen35/prepare_kie.py \
+uv run python src/step_01_prepare/prepare_kie.py \
   --input data/OCRBench_v2/OCRBench_v2.json \
-  --output data/smoke_test/qwen35_poie_10.json \
-  --dataset-name POIE --limit 10 --seed 42
+  --output data/benchmark/english_kie_400.json \
+  --expected-count 400
 ```
 
-The script preserves the benchmark fields and samples deterministically. If zero POIE samples match, first inspect the exact `dataset_name` values in your downloaded JSON. To select all English KIE examples, omit `--dataset-name` and `--limit` and choose a new output path.
+Use that same prepared file for every direct VLM; the OCR→LM manifest is derived from the same selection. Benchmark annotations and images remain local, not committed to GitHub.
 
-## 3. Run on a GPU node
-
-Qwen3.5-9B requires sufficient GPU memory. Use a scheduled GPU allocation; **do not run model inference on an HPC login node**. Verify CUDA first:
+## 3. Submit the full Qwen3.5 experiment on a GPU node
 
 ```bash
-uv run python -c 'import torch; print(torch.cuda.is_available())'
-uv run python src/vlm/qwen35/run.py \
-  --input data/smoke_test/qwen35_poie_10.json \
+sbatch slurm/vlm/qwen35_kie.sbatch
+```
+
+The active batch file executes:
+
+```bash
+uv run python src/step_02_vlm/qwen35/run.py \
+  --input data/benchmark/english_kie_400.json \
   --dataset-root data/OCRBench_v2 \
-  --output results/qwen35_poie_10.json
+  --output results/by_model/qwen35_direct/predictions.json
 ```
 
-Or adapt `slurm/vlm/qwen35_pilot.sbatch` to your cluster's partition/account/GPU policies and submit from the repository root:
+**Standardized SLURM request:** `gpu-single`, 1 node, 1 task, 4 CPUs, one A100 GPU, 64 GB system RAM, and a 1-hour time limit. Ensure that the model weights are cached or downloadable by the compute node and verify the environment before running. **Never run GPU inference on an HPC login node.**
 
-```bash
-sbatch slurm/vlm/qwen35_pilot.sbatch
-```
+The runner uses `AutoProcessor` and `AutoModelForMultimodalLM`, sends the image and original question with its fixed JSON-only suffix, disables thinking by default, performs greedy decoding (`do_sample=False`), and has `max_new_tokens=384` as its default. Do not silently modify these settings for an established baseline.
 
-The runner uses the model's Hugging Face `AutoProcessor` and `AutoModelForMultimodalLM`. It sends the image with the benchmark's original question plus the same fixed JSON-only suffix for every sample. Thinking is disabled for this baseline (`--enable-thinking` changes this); greedy decoding and `max_new_tokens=384` are fixed defaults. Record any subsequent changes as separate experimental conditions.
+Each sample is saved promptly into an OCRBench-compatible JSON list; a `.run_metadata.json` sidecar records model and hardware settings. The runner supports resuming and `--retry-failures`. Output files containing reference answers should **not** be committed.
 
-Each processed record is saved immediately into a benchmark-compatible JSON list with `predict` and additional timing/peak allocated CUDA memory fields. It resumes after interruption; failures receive `predict: ""` and an `error` field, and can be retried with `--retry-failures`. A sidecar `.run_metadata.json` records the model and hardware settings and guards against resuming with changed generation settings.
+## 4. Official evaluation
 
-**Outputs are not automatically gitignored:** avoid committing large `results/*.json` files accidentally.
-
-## 4. Score with official OCRBench v2 evaluation code
-
-Clone the [official OCRBench v2 code](https://github.com/Yuliang-Liu/MultimodalOCR/tree/main/OCRBench_v2) separately. For example, if it is in a sibling directory `../MultimodalOCR/`:
+Assuming the official `MultimodalOCR` repository is checked out alongside this repository:
 
 ```bash
 uv run python ../MultimodalOCR/OCRBench_v2/eval_scripts/eval.py \
-  --input_path results/qwen35_poie_10.json \
-  --output_path results/qwen35_poie_10_scored.json
-uv run python src/vlm/qwen35/summarize.py \
-  --input results/qwen35_poie_10_scored.json
+  --input_path results/by_model/qwen35_direct/predictions.json \
+  --output_path results/by_model/qwen35_direct/predictions_scored.json
+
+uv run python src/step_02_vlm/qwen35/summarize.py \
+  --input results/by_model/qwen35_direct/predictions_scored.json
 ```
 
-The official English KIE `score` is a dictionary-based per-key F1 match; our summary averages the **official per-sample score**. `get_score.py` reports bilingual category totals and may divide by zero for an English-only subset, so use the scored samples for the pilot mean instead. Never substitute our summary for running the official scorer.
+The second command is a *temporary, original Qwen-only summary*. We will later replace this step with the team's shared `src/step_04_evaluation/` workflow. Always run the official evaluator first and distinguish official scores from diagnostics.
 
-Latency covers processor preprocessing plus generation (not model load). Memory metrics are per-GPU peak **allocated CUDA bytes**, not physical memory usage or electrical energy. For OCR→LM comparisons, add OCR latency to LM latency and use the **same sample IDs** and consistent hardware where possible.
+Recorded inference latency includes model input preprocessing and generation but excludes model loading and saving output. CUDA memory metrics are peak allocated bytes, not electrical energy.
 
-## Validation status
+## 5. Testing and provenance
 
-- Four offline unit tests passed on synthetic data without loading the model.
-- The actual OCRBench v2 dataset is not bundled here, and the 9B model has **not** been run in this environment.
-- GPU availability, model download, image path variations, and final benchmark scoring still require cluster validation.
+The earlier repository already contains successful historical 400-document results. We **do not need a dedicated ten-document pilot batch file** in this new repository. Before a full rerun, verify the reorganized paths with offline tests, and optionally run a one-document smoke test using a temporary single-record input on a GPU compute node.
+
+This README describes the new intended workflow; execution from the new repository has **not yet been verified on Helix**. Preserve original experiment configurations and compare reruns separately from historical results.
+
+Details of the old source and commit are recorded in `docs/experiments/qwen_baseline_import.md`.

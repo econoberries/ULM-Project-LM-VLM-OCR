@@ -1,6 +1,6 @@
 # Standardized SLURM resources — English KIE
 
-All **active** SLURM batch scripts request the same allocation:
+All **five active full-experiment** SLURM batch scripts request the same allocation:
 
 ```bash
 #SBATCH --partition=gpu-single
@@ -19,7 +19,6 @@ Each batch file uses its own `--job-name`. These are **requested resources**, no
 
 | Stage | Batch file | Input |
 | --- | --- | --- |
-| Qwen3.5 direct VLM pilot | `slurm/vlm/qwen35_pilot.sbatch` | `data/smoke_test/qwen35_poie_10.json` |
 | Qwen3.5 direct VLM full | `slurm/vlm/qwen35_kie.sbatch` | `data/benchmark/english_kie_400.json` |
 | MiniCPM direct VLM full | `slurm/vlm/minicpm_kie.sbatch` | `data/benchmark/english_kie_400.json` |
 | PaddleOCR text extraction | `slurm/ocr/paddleocr_kie.sbatch` | `data/benchmark/english_kie_400_ocr.json` |
@@ -41,14 +40,11 @@ uv run python src/step_01_prepare/prepare_ocr_manifest.py \
   --output data/benchmark/english_kie_400_ocr.json \
   --expected-count 400
 
-# Optional 10-example POIE pilot, selected from original annotations:
-uv run python src/step_01_prepare/prepare_kie.py \
-  --input data/OCRBench_v2/OCRBench_v2.json \
-  --output data/smoke_test/qwen35_poie_10.json \
-  --dataset-name POIE --limit 10 --seed 42
 ```
 
 ### Running and prerequisites
+
+The new repository has no dedicated 10-document pilot batch file. Historical full-benchmark results already exist; before rerunning, verify paths offline and optionally use a one-document GPU smoke test from a temporary input JSON. The production batch files always read the complete 400-example manifest.
 
 Example: `sbatch slurm/vlm/qwen35_kie.sbatch` (after validating its prerequisites).
 

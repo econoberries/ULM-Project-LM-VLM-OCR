@@ -3,7 +3,7 @@
 Original source copied from `econoberries/ULM-VLM-OCR-IE`, branch `feature/qwen35-english-kie`, commit `969c420d3adce1bd8b82961c507efdb6cb51c454`:
 
 - The Python source and Qwen-specific README in `src/step_02_vlm/qwen35/` are unchanged copies.
-- The **active** `slurm/vlm/qwen35_pilot.sbatch` has been standardized (4 CPUs, one A100, one hour, updated script paths). A separate active `slurm/vlm/qwen35_kie.sbatch` targets the full 400 examples.
+- The only active Qwen3.5 SLURM launcher is `slurm/vlm/qwen35_kie.sbatch`, standardized for 4 CPUs, one A100, one-hour limit, and the shared 400-example manifest. A separate 10-document pilot batch file is intentionally not included.
 - The historic original batch file is retained only in the old repository and Git history; there is no duplicate SLURM archive in this new repository.
 
 **Compatibility note:** The original Qwen-specific README and test module instructions still mention the old paths `src/vlm/qwen35/`; the active SLURM files use `src/step_02_vlm/qwen35/`. The documentation and tests will be reviewed during pipeline testing.
