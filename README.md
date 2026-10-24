@@ -72,6 +72,104 @@ uv pip install paddlepaddle-gpu -i https://www.paddlepaddle.org.cn/packages/stab
 uv pip install paddleocr
 ```
 
+## Setup walkthrough: MacBook to Helix (A100)
+
+Use the **MacBook for source control, lightweight validation, and dataset transfer**.
+Use **Helix GPU compute nodes for OCR and model inference**. The dataset and
+model outputs are intentionally not in Git, so every machine needs its own copy.
+
+### 1. On the MacBook: verify the clone and prepare the benchmark
+
+If you have not cloned the repository yet, use `git clone
+https://github.com/econoberries/ULM-Project-LM-VLM-OCR.git` and enter that folder.
+Otherwise, from the repository root:
+
+```bash
+git pull --ff-only origin main
+python3 pipeline.py --help
+python3 -m unittest discover -s tests -p "test_*.py" -v
+python3 pipeline.py submit --gpu a100 --stage qwen35 --dry-run
+```
+
+The dry run only prints the SLURM command; it does **not** submit a job.
+After downloading and extracting OCRBench v2 as described above:
+
+```bash
+ls -lh data/OCR_Bench_v2/OCRBench_v2.json
+python3 pipeline.py prepare --gpu a100
+shasum -a 256 data/benchmark/english_kie_400.json
+```
+
+The initial local preparation found **400 English KIE records**: FUNSD 48,
+POIE 177, Receipt 25, SROIE 150. It validated 400 unique records and their
+images. The prepared JSON's initial SHA256 was:
+
+```text
+fdd8bf4c395f60203361f9423c69cddfe6fe7873b4ebe4969af765c13701ae59
+```
+
+Compare the *prepared manifest* hash across machines. If it differs,
+investigate the dataset version, selection, or source-file contents before
+running inference. These are the initial reference values, not guaranteed
+properties of a future dataset release.
+
+### 2. From the MacBook: log in and clone on Helix
+
+Replace `YOUR_HELIX_USERNAME` with your actual account name:
+
+```bash
+ssh YOUR_HELIX_USERNAME@helix.bwservices.uni-heidelberg.de
+```
+
+The following commands run **inside the Helix SSH session**:
+
+```bash
+cd ~
+git clone https://github.com/econoberries/ULM-Project-LM-VLM-OCR.git
+cd ULM-Project-LM-VLM-OCR
+python3 pipeline.py --help
+exit
+```
+
+If the repository already exists on Helix, run `cd
+~/ULM-Project-LM-VLM-OCR && git pull --ff-only origin main` instead of cloning.
+
+### 3. On the MacBook: transfer the dataset to Helix
+
+Back in the **MacBook terminal**, with the current directory at the **local
+repository root**, run:
+
+```bash
+rsync -avh --progress data/OCR_Bench_v2/ \
+  YOUR_HELIX_USERNAME@helix.bwservices.uni-heidelberg.de:~/ULM-Project-LM-VLM-OCR/data/OCR_Bench_v2/
+```
+
+The trailing slash on the source means to copy the **contents** of that
+directory, not add an extra nested directory. Do not transfer raw benchmark
+files through Git.
+
+### 4. On Helix: reproduce preparation and verify the checksum
+
+```bash
+ssh YOUR_HELIX_USERNAME@helix.bwservices.uni-heidelberg.de
+cd ~/ULM-Project-LM-VLM-OCR
+ls -lh data/OCR_Bench_v2/OCRBench_v2.json
+python3 pipeline.py prepare --gpu a100
+sha256sum data/benchmark/english_kie_400.json
+python3 pipeline.py check --gpu a100
+```
+
+Expect 400 valid English KIE records and the **same SHA256** as on the MacBook.
+Preparation and validation are CPU-only and do not require a GPU allocation.
+The `--gpu a100` flag here names the output/manifest layout, not the hardware
+used for preparation.
+
+Before submitting full jobs, install and **verify** the locked Python
+environment, GPU compatibility, PaddleOCR dependencies, and model checkpoints
+on the Helix configuration; then perform small GPU smoke tests. These
+end-to-end cluster validations are not yet complete. Run GPU inference only
+through an allocated compute node, not on the login node.
+
 ## Run the pipeline
 
 Use `--gpu a100` on Helix or `--gpu h100` on the teammate's cluster.
