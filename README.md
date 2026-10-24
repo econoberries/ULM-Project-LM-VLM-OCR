@@ -29,7 +29,35 @@ tests/                      # Offline input and unit checks
 
 Requires Python 3.12, [uv](https://docs.astral.sh/uv/), compatible GPU drivers,
 and the separately downloaded OCRBench v2 images and `OCRBench_v2.json`
-under `data/OCRBench_v2/`.
+under `data/OCR_Bench_v2/`.
+
+### Download the benchmark (not stored in Git)
+
+Download the **official OCRBench v2 dataset** from
+[the project’s Google Drive link](https://drive.google.com/file/d/1Hk1TMu--7nr5vJ7iaNwMQZ_Iw9W_KI3C/view?usp=sharing)
+([official dataset instructions](https://github.com/Yuliang-Liu/MultimodalOCR/tree/main/OCRBench_v2)).
+Extract it, then place the **contents** directly in the tracked placeholder directory:
+
+```text
+data/
+  OCR_Bench_v2/
+    .gitkeep
+    OCRBench_v2.json
+    EN_part/
+    CN_part/
+```
+
+Do not place another `OCRBench_v2/` directory inside `data/OCR_Bench_v2/`.
+The benchmark files and images stay local and are excluded from Git;
+only `.gitkeep` is tracked. After copying the data, verify from the repository root:
+
+```bash
+ls -lh data/OCR_Bench_v2/OCRBench_v2.json
+python3 pipeline.py prepare --gpu a100
+```
+
+Preparation should find **400 English KIE records** and validate their image paths.
+On the H100 cluster, use `--gpu h100` instead.
 
 ```bash
 uv sync --locked

@@ -48,6 +48,14 @@ class Qwen35OfflineTests(unittest.TestCase):
             image.write_bytes(b"test")
             self.assertEqual(runner.resolve_image(root, "EN_part/a.jpg"), image.resolve())
             self.assertEqual(runner.resolve_image(root, "OCRBench_v2/EN_part/a.jpg"), image.resolve())
+            renamed_root = Path(folder) / "OCR_Bench_v2"
+            renamed_image = renamed_root / "EN_part" / "b.jpg"
+            renamed_image.parent.mkdir(parents=True)
+            renamed_image.write_bytes(b"test")
+            self.assertEqual(
+                runner.resolve_image(renamed_root, "OCRBench_v2/EN_part/b.jpg"),
+                renamed_image.resolve(),
+            )
             with self.assertRaises(FileNotFoundError):
                 runner.resolve_image(root, "EN_part/missing.jpg")
 

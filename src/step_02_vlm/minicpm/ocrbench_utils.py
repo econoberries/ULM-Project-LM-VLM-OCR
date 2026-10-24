@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_INPUT_FILE = REPO_ROOT / "data" / "benchmark" / "english_kie_400.json"
 # image_path in the JSON is relative to this folder
-DEFAULT_IMAGE_FOLDER = REPO_ROOT / "data" / "OCRBench_v2"
+DEFAULT_IMAGE_FOLDER = REPO_ROOT / "data" / "OCR_Bench_v2"
 
 # OCRB2, lines 39, 236
 KIE_TYPE = "key information extraction en"
@@ -60,6 +60,8 @@ def resolve_image_path(image_folder, image_path):
     raw = Path(image_path)
     root = Path(image_folder)
     candidates = [raw] if raw.is_absolute() else [root / raw, root.parent / raw]
+    if not raw.is_absolute() and raw.parts and raw.parts[0] == "OCRBench_v2":
+        candidates.append(root.joinpath(*raw.parts[1:]))
     for path in candidates:
         if path.is_file():
             return str(path)

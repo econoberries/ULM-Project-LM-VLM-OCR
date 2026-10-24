@@ -4,7 +4,7 @@ From the repository root, on a suitable compute node:
 
     python src/step_03_ocr_lm/run_ocr.py \
       --input data/benchmark/english_kie_400_ocr.json \
-      --dataset-root data/OCRBench_v2
+      --dataset-root data/OCR_Bench_v2
 
 For a small test, add: --limit 1
 
@@ -65,7 +65,11 @@ def image_file(dataset_root, image_path):
     raw = Path(image_path)
     if raw.is_absolute() or ".." in raw.parts:
         raise ValueError(f"Unsafe image path: {image_path}")
-    for candidate in (dataset_root / raw, dataset_root.parent / raw):
+    candidates = [dataset_root / raw, dataset_root.parent / raw]
+    # Official annotations can include the original extracted directory prefix.
+    if raw.parts and raw.parts[0] == "OCRBench_v2":
+        candidates.append(dataset_root.joinpath(*raw.parts[1:]))
+    for candidate in candidates:
         if candidate.is_file():
             return candidate
     raise FileNotFoundError(f"Cannot find image {image_path!r} under {dataset_root}")

@@ -30,6 +30,8 @@ def resolve_image(dataset_root: Path, image_path: str) -> Path:
         candidates = [raw]
     else:
         candidates = [dataset_root / raw, dataset_root.parent / raw]
+        if raw.parts and raw.parts[0] == "OCRBench_v2":
+            candidates.append(dataset_root.joinpath(*raw.parts[1:]))
     for candidate in candidates:
         if candidate.is_file():
             return candidate.resolve()

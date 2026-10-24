@@ -36,8 +36,12 @@ def check(rows, root, require_ocr):
         image = Path(row["image_path"])
         if image.is_absolute() or ".." in image.parts:
             problems.append(f"row {i}: unsafe image path {image}")
-        elif not ((root / image).is_file() or (root.parent / image).is_file()):
-            problems.append(f"row {i}: image missing {image}")
+        else:
+            candidates = [root / image, root.parent / image]
+            if image.parts and image.parts[0] == "OCRBench_v2":
+                candidates.append(root.joinpath(*image.parts[1:]))
+            if not any(path.is_file() for path in candidates):
+                problems.append(f"row {i}: image missing {image}")
         if require_ocr:
             value = row.get("text_path")
             if not isinstance(value, str) or not value:
@@ -57,7 +61,7 @@ def check(rows, root, require_ocr):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--input", type=Path, required=True)
-    p.add_argument("--dataset-root", type=Path, default=Path("data/OCRBench_v2"))
+    p.add_argument("--dataset-root", type=Path, default=Path("data/OCR_Bench_v2"))
     p.add_argument("--require-ocr", action="store_true")
     args = p.parse_args()
     if not args.input.is_file():

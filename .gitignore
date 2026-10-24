@@ -19,6 +19,9 @@ __pycache__/
 
 # Downloaded OCRBench v2 data and generated intermediate datasets
 # Commit preparation scripts and ID-only manifests instead.
+/data/OCR_Bench_v2/*
+!/data/OCR_Bench_v2/.gitkeep
+# Ignore legacy spelling as well, to prevent accidental dataset commits.
 /data/OCRBench_v2/
 /data/benchmark/
 /data/ocr_output/

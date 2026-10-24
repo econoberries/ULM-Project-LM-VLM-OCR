@@ -5,7 +5,7 @@ not change the original data, copy images, run OCR, or evaluate predictions.
 
 Example (from the repository root):
     python src/step_01_prepare/prepare_kie.py \
-      --input data/OCRBench_v2/OCRBench_v2.json \
+      --input data/OCR_Bench_v2/OCRBench_v2.json \
       --output data/benchmark/english_kie_400.json \
       --expected-count 400
 """

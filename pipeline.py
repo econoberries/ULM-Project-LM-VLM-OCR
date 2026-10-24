@@ -34,7 +34,7 @@ def validate(gpu, require_ocr=False):
 
 def prepare(gpu):
     execute([sys.executable, "src/step_01_prepare/prepare_kie.py",
-             "--input", "data/OCRBench_v2/OCRBench_v2.json",
+             "--input", "data/OCR_Bench_v2/OCRBench_v2.json",
              "--output", subset(), "--expected-count", "400"])
     execute([sys.executable, "src/step_01_prepare/prepare_ocr_manifest.py",
              "--input", subset(), "--output", ocr_manifest(gpu),
@@ -49,14 +49,14 @@ def run_stage(gpu, stage):
     outputs = Path("results/by_model")
     commands = {
         "qwen35": ["src/step_02_vlm/qwen35/run.py",
-                    "--input", benchmark, "--dataset-root", "data/OCRBench_v2",
+                    "--input", benchmark, "--dataset-root", "data/OCR_Bench_v2",
                     "--max-new-tokens", "384",
                     "--output", outputs / "qwen35_direct" / gpu / "predictions.json"],
         "minicpm": ["src/step_02_vlm/minicpm/run.py",
-                     "--input_file", benchmark, "--image_folder", "data/OCRBench_v2",
+                     "--input_file", benchmark, "--image_folder", "data/OCR_Bench_v2",
                      "--output_file", outputs / "minicpm_direct" / gpu / "predictions.json"],
         "paddleocr": ["src/step_03_ocr_lm/run_ocr.py",
-                       "--input", ocr_input, "--dataset-root", "data/OCRBench_v2",
+                       "--input", ocr_input, "--dataset-root", "data/OCR_Bench_v2",
                        "--report", Path("data/ocr_output") / gpu / "paddleocr_metrics.json"],
         "ocr-qwen35": ["src/step_03_ocr_lm/qwen35.py",
                         "--input", ocr_input, "--dataset-root", ".",
