@@ -13,6 +13,7 @@ import tempfile
 import time
 
 MODEL_ID = "Qwen/Qwen3.5-9B"
+MODEL_REVISION = "c202236235762e1c871ad0ccb60c8ee5ba337b9a"
 TASK_TYPE = "key information extraction en"
 SUFFIX = (
     "\nReturn only a JSON object mapping each requested key to its extracted string value. "
@@ -129,6 +130,7 @@ def main():
     parser.add_argument("--dataset-root", type=Path, required=True, help="Extracted OCRBench_v2 directory")
     parser.add_argument("--output", type=Path, required=True, help="Predictions JSON")
     parser.add_argument("--model", default=MODEL_ID, help="Hugging Face model ID or local path")
+    parser.add_argument("--revision", default=MODEL_REVISION, help="Pinned Hugging Face checkpoint revision")
     parser.add_argument("--max-new-tokens", type=int, default=384)
     parser.add_argument("--enable-thinking", action="store_true", help="Enable thinking (off for baseline)")
     parser.add_argument("--retry-failures", action="store_true", help="Re-attempt previous failed samples")
@@ -157,6 +159,7 @@ def main():
             prior_settings = json.load(handle)
         for name, new_value in {
             "model": args.model,
+            "revision": args.revision,
             "max_new_tokens": args.max_new_tokens,
             "enable_thinking": args.enable_thinking,
         }.items():
@@ -188,16 +191,16 @@ def main():
         raise RuntimeError("CUDA GPU unavailable. Request a GPU node via SLURM before loading Qwen3.5-9B.")
     start_load = time.perf_counter()
     print(f"Loading {args.model} on {torch.cuda.device_count()} CUDA device(s)...", flush=True)
-    processor = AutoProcessor.from_pretrained(args.model)
+    processor = AutoProcessor.from_pretrained(args.model, revision=args.revision)
     model = AutoModelForMultimodalLM.from_pretrained(
-        args.model, device_map="auto", dtype="auto"
+        args.model, revision=args.revision, device_map="auto", dtype="auto"
     ).eval()
     load_sec = time.perf_counter() - start_load
     print(f"Model loaded in {load_sec:.1f}s", flush=True)
 
     results = dict(existing)
     run_metadata = {
-        "model": args.model, "task": TASK_TYPE,
+        "model": args.model, "revision": args.revision, "task": TASK_TYPE,
         "benchmark_input": str(args.input), "dataset_root": str(args.dataset_root),
         "max_new_tokens": args.max_new_tokens, "enable_thinking": args.enable_thinking,
         "do_sample": False, "model_load_seconds": round(load_sec, 3),
