@@ -1,6 +1,6 @@
 """
-MiniCPM-V-4.6 settings, model loading, single-image inference and timing/memory measurement.
-Used by run_one_record.py and run.py; summarize results with src/vlm/qwen35/summarize.py.
+MiniCPM-V-4.6 settings, model loading, inference, timing and GPU memory.
+Used by run_one_record.py and run.py; summarize results with src/step_04_evaluation/summarize_all.py.
 
 References
 1. HF-CARD, MiniCPM-V-4.6 model card: https://huggingface.co/openbmb/MiniCPM-V-4.6/blob/36f34a661a4bd35d0dc2294cb044d2584646c7d3/README.md
@@ -10,7 +10,7 @@ References
 5. OCRB, OCRBench inference example: https://github.com/Yuliang-Liu/MultimodalOCR/blob/4e363b3f499811b43d792ef0bb33932ef05eca27/OCRBench/example.py
 6. OCRB2, OCRBench v2 evaluator: https://github.com/Yuliang-Liu/MultimodalOCR/blob/4e363b3f499811b43d792ef0bb33932ef05eca27/OCRBench_v2/eval_scripts/eval.py
 7. TF, Transformers 5.19 processor API: https://github.com/huggingface/transformers/blob/v5.19.0/src/transformers/processing_utils.py
-8. QWEN-RUN, Qwen3.5 inference script: src/vlm/qwen35/run.py, branch feature/qwen35-english-kie, commit 969c420
+8. QWEN, Qwen3.5 inference script: src/step_02_vlm/qwen35/run.py, branch feature/qwen35-english-kie, commit 969c420
 """
 
 import logging
@@ -40,8 +40,16 @@ MODEL_REVISION = "36f34a661a4bd35d0dc2294cb044d2584646c7d3"
 DOWNSAMPLE_MODE = "16x"
 MAX_SLICE_NUMS = 36
 
-# HF-CARD, line 164
-MAX_NEW_TOKENS = 512
+# QWEN, line 111
+# Same limit as the other pipelines (HF-CARD, line 164 uses 512)
+MAX_NEW_TOKENS = 384
+
+# QWEN, lines 17-20
+# Same instruction as the other pipelines, appended to the OCRBench question
+SUFFIX = (
+    "\nReturn only a JSON object mapping each requested key to its extracted string value. "
+    "Do not invent values or include commentary, reasoning, or Markdown."
+)
 
 # Fixed seed
 SEED = 0
@@ -59,6 +67,7 @@ def run_metadata(model, model_path, revision, **fields):
             "downsample_mode": DOWNSAMPLE_MODE,
             "max_slice_nums": MAX_SLICE_NUMS,
             "max_new_tokens": MAX_NEW_TOKENS,
+            "prompt_suffix": SUFFIX,
             "do_sample": False,
             "num_beams": 1,
             "enable_thinking": False,
@@ -87,14 +96,14 @@ def run_inference(model, processor, image_path, question, max_new_tokens=MAX_NEW
     # MCPV-EVAL, line 695
     image = Image.open(image_path).convert("RGB")
 
-    # HF-CARD, lines 145-153
-    # Image first, OCRBench question unchanged
+    # HF-CARD, lines 145-153; QWEN, line 85
+    # Image first, then OCRBench question + SUFFIX
     messages = [
         {
             "role": "user",
             "content": [
                 {"type": "image", "image": image},
-                {"type": "text", "text": question},
+                {"type": "text", "text": question + SUFFIX},
             ],
         }
     ]
@@ -140,13 +149,13 @@ def run_inference(model, processor, image_path, question, max_new_tokens=MAX_NEW
 # ---------------------------------------------------------------------------
 # Timing and GPU memory, defined as in the Qwen3.5 run
 # ---------------------------------------------------------------------------
-# QWEN-RUN, lines 69-72
+# QWEN, lines 69-72
 def _synchronize_cuda():
     for i in range(torch.cuda.device_count()):
         torch.cuda.synchronize(i)
 
 
-# QWEN-RUN, lines 87-90
+# QWEN, lines 87-90
 def start_sample_timer():
     """Reset GPU peak memory and start the clock."""
     for i in range(torch.cuda.device_count()):
@@ -155,7 +164,7 @@ def start_sample_timer():
     return time.perf_counter()
 
 
-# QWEN-RUN, lines 75-78, 97-98, 197
+# QWEN, lines 75-78, 97-98, 197
 def stop_sample_timer(start):
     """Return (inference_seconds, peak_allocated_gpu_bytes); empty GPU list on CPU."""
     _synchronize_cuda()
@@ -164,9 +173,8 @@ def stop_sample_timer(start):
     return seconds, peak
 
 
-# QWEN-RUN, lines 180-182
+# QWEN, lines 180-182
 def environment_info():
-    """Run-level environment fields."""
     return {
         "started_utc": datetime.now(timezone.utc).isoformat(),
         "torch_version": torch.__version__,

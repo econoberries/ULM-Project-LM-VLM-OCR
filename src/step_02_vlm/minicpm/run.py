@@ -1,6 +1,6 @@
 """
 Run MiniCPM-V-4.6 on all English KIE records in an OCRBench v2 JSON file.
-uv run python src/vlm/minicpm/run.py
+uv run python src/step_02_vlm/minicpm/run.py
 
 References
 1. OCRB, OCRBench inference example: https://github.com/Yuliang-Liu/MultimodalOCR/blob/4e363b3f499811b43d792ef0bb33932ef05eca27/OCRBench/example.py
@@ -31,6 +31,7 @@ from ocrbench_utils import (
     KIE_TYPE,
     check_not_same_file,
     load_done_predictions,
+    record_key,
     load_json,
     resolve_image_path,
     save_json,
@@ -76,7 +77,7 @@ def main():
     logger.info(f"{len(kie_data)} of {len(data)} rows in {args.input_file} have type {KIE_TYPE!r}")
 
     # OCRB, lines 92-96
-    # Resume, matched by `id`.
+    # Resume, matched by the full benchmark record identity.
     done = load_done_predictions(args.output_file)
     if done:
         logger.info(f"{args.output_file} exists: {len(done)} rows already have a prediction and are skipped")
@@ -84,7 +85,7 @@ def main():
     errors_file = sidecar_path(args.output_file, "errors")
     errors = []
     model = None
-    if any(item["id"] not in done for item in kie_data):
+    if any(record_key(item) not in done for item in kie_data):
         # Load once, outside the loop.
         load_start = time.perf_counter()
         model, processor = load_model(args.model_path, args.revision)
@@ -93,9 +94,9 @@ def main():
         results = []
         for i, record in enumerate(kie_data):
             prefix = f"[{i + 1}/{len(kie_data)}] id={record['id']} dataset={record['dataset_name']}"
-            if record["id"] in done:
+            if record_key(record) in done:
                 logger.info(f"{prefix} skipped (already predicted)")
-                results.append(done[record["id"]])
+                results.append(done[record_key(record)])
                 continue
 
             try:

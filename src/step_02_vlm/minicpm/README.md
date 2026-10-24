@@ -1,33 +1,24 @@
-# MiniCPM-V-4.6
+# MiniCPM-V-4.6 — English KIE
 
-Runs `openbmb/MiniCPM-V-4.6` on OCRBench v2 English **Key Information Extraction (KIE)** records.
+Model: `openbmb/MiniCPM-V-4.6` (revision pinned in `minicpm_utils.py`).
 
-## Files
+The **standardized new experiment** appends the same JSON-only suffix as the
+other models, uses greedy decoding (`do_sample=False`) and limits generation
+to 384 new tokens. The earlier historical predictions, created with 512 tokens
+and no suffix, are a different experimental condition.
 
-* `run_one_record.py` — quick check on one KIE record
-* `run.py` — run all English KIE records
-* `minicpm_utils.py` — model loading, inference, timing and GPU memory
-* `ocrbench_utils.py` — OCRBench file handling
-
-## Run
-
-Quick check:
+Run all 400 prepared documents using the allocation available to you:
 
 ```bash
-uv run python src/vlm/minicpm/run_one_record.py
+sbatch slurm/a100/minicpm_kie.sbatch
+# OR, from the H100 cluster:
+sbatch slurm/h100/minicpm_kie.sbatch
 ```
 
-Full cluster run:
+Python code is shared; hardware-specific outputs are saved to
+`results/by_model/minicpm_direct/a100/` and `.../h100/`.
+The runner resumes by a composite record identity so repeated `id` values
+across source datasets cannot silently replace records. Use the official
+OCRBench scorer before `src/step_04_evaluation/summarize_all.py`.
 
-```bash
-sbatch slurm/vlm/minicpm_kie.sbatch
-```
-
-The full run uses only `"key information extraction en"` records and can resume from completed predictions.
-
-Summary (mean F1 and time), with the team's shared script, on the file scored by the official `eval.py`:
-
-```bash
-uv run python src/vlm/qwen35/summarize.py --input results/minicpm/OCRBench_v2_minicpm_v46_scored.json
-```
-
+See `docs/running_on_a100_h100.md` for prerequisites and run order.

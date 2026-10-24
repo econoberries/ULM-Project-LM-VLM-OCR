@@ -17,7 +17,8 @@ import sys
 TASK = "key information extraction en"
 REQUIRED_FILES = (
     "src/step_02_vlm/qwen35/run.py",
-    "slurm/vlm/qwen35_kie.sbatch",
+    "slurm/a100/qwen35_kie.sbatch",
+    "slurm/h100/qwen35_kie.sbatch",
     "pyproject.toml",
     "uv.lock",
 )

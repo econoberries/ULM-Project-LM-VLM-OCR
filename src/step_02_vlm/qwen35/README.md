@@ -29,7 +29,7 @@ Use that same prepared file for every direct VLM; the OCR→LM manifest is deriv
 ## 3. Submit the full Qwen3.5 experiment on a GPU node
 
 ```bash
-sbatch slurm/vlm/qwen35_kie.sbatch
+sbatch slurm/a100/qwen35_kie.sbatch
 ```
 
 The active batch file executes:
@@ -38,10 +38,12 @@ The active batch file executes:
 uv run python src/step_02_vlm/qwen35/run.py \
   --input data/benchmark/english_kie_400.json \
   --dataset-root data/OCRBench_v2 \
-  --output results/by_model/qwen35_direct/predictions.json
+  --output results/by_model/qwen35_direct/a100/predictions.json
 ```
 
-**Standardized SLURM request:** `gpu-single`, 1 node, 1 task, 4 CPUs, one A100 GPU, 64 GB system RAM, and a 1-hour time limit. Ensure that the model weights are cached or downloadable by the compute node and verify the environment before running. **Never run GPU inference on an HPC login node.**
+For the H100 allocation, use `sbatch slurm/h100/qwen35_kie.sbatch` instead; it saves results in the corresponding `h100/` folder.
+
+**A100 SLURM request:** `gpu-single`, 1 node, 1 task, 4 CPUs, one A100 GPU, 64 GB system RAM, and a 2-hour time limit. Ensure that the model weights are cached or downloadable by the compute node and verify the environment before running. **Never run GPU inference on an HPC login node.**
 
 The runner uses `AutoProcessor` and `AutoModelForMultimodalLM`, sends the image and original question with its fixed JSON-only suffix, disables thinking by default, performs greedy decoding (`do_sample=False`), and has `max_new_tokens=384` as its default. Do not silently modify these settings for an established baseline.
 
@@ -53,7 +55,7 @@ Assuming the official `MultimodalOCR` repository is checked out alongside this r
 
 ```bash
 uv run python ../MultimodalOCR/OCRBench_v2/eval_scripts/eval.py \
-  --input_path results/by_model/qwen35_direct/predictions.json \
+  --input_path results/by_model/qwen35_direct/a100/predictions.json \
   --output_path results/by_model/qwen35_direct/predictions_scored.json
 
 uv run python src/step_02_vlm/qwen35/summarize.py \

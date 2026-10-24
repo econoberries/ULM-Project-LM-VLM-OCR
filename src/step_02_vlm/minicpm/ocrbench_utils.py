@@ -57,10 +57,13 @@ def check_not_same_file(input_file, output_file):
 
 # OCRB, line 59
 def resolve_image_path(image_folder, image_path):
-    full_path = os.path.join(image_folder, image_path)
-    if not os.path.isfile(full_path):
-        raise FileNotFoundError(f"Image not found: {full_path}")
-    return full_path
+    raw = Path(image_path)
+    root = Path(image_folder)
+    candidates = [raw] if raw.is_absolute() else [root / raw, root.parent / raw]
+    for path in candidates:
+        if path.is_file():
+            return str(path)
+    raise FileNotFoundError(f"Image not found: {image_path!r}; tried {candidates}")
 
 
 # OCRB2, lines 241-245
@@ -69,17 +72,34 @@ def has_valid_predict(record):
 
 
 # OCRB, lines 92-96
+def record_key(record):
+    """Composite identity: dataset, task, id, image path and question."""
+    return json.dumps(
+        [record.get("dataset_name"), record.get("type"), record.get("id"),
+         record.get("image_path"), record.get("question")],
+        ensure_ascii=False,
+    )
+
+
 def load_done_predictions(output_file):
-    """{id: record} for output records that already have a valid `predict`."""
+    """Resume only exact benchmark records with a string prediction."""
     if not os.path.exists(output_file):
         return {}
-    return {item["id"]: item for item in load_json(output_file) if has_valid_predict(item)}
+    done = {}
+    for item in load_json(output_file):
+        if not has_valid_predict(item):
+            continue
+        key = record_key(item)
+        if key in done:
+            raise ValueError(f"Duplicate prediction in {output_file}: {key}")
+        done[key] = item
+    return done
 
 
 def validate_predictions(expected_records, output_file):
-    """Return ids without a string `predict` in the output file (empty list = OK)."""
+    """Return ids of missing exact records (empty list = OK)."""
     done = load_done_predictions(output_file)
-    failed_ids = [item["id"] for item in expected_records if item["id"] not in done]
+    failed_ids = [item["id"] for item in expected_records if record_key(item) not in done]
     if failed_ids:
         logger.error(f"VALIDATION FAILED: {len(failed_ids)}/{len(expected_records)} rows have no string "
                      f"`predict`: ids={failed_ids}. See {sidecar_path(output_file, 'errors')}.")

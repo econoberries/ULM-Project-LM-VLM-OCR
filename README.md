@@ -1,21 +1,43 @@
 # Understanding LM, VLM and OCR for Document Extraction
 
-A reproducible research project comparing **direct vision-language models (VLMs)** with **OCR + language-model (LM) pipelines** for document key information extraction (KIE).
+Reproducible OCRBench v2 **English Key Information Extraction (KIE)** research
+comparing direct image-to-answer VLMs and PaddleOCR→language-model pipelines.
 
-## Research goal
+## Methods
 
-Compare extraction accuracy, inference time, GPU memory usage, and structured-output reliability across approaches using the **OCRBench v2 English KIE** benchmark.
+- Direct Qwen3.5-9B VLM
+- Direct MiniCPM-V-4.6 VLM
+- PaddleOCR → Qwen3.5-9B
+- PaddleOCR → Qwen2.5-14B-Instruct-1M
 
-## Project workflow
+All methods use one **400-record English KIE benchmark selection**. The current
+standardized inference settings are 384 generated tokens, deterministic greedy
+decoding, and the shared JSON-only suffix. MiniCPM historical 512-token runs
+remain a separately documented baseline.
 
-1. Prepare one shared benchmark selection for every method.
-2. Run each direct VLM or OCR-to-LM pipeline.
-3. Score predictions using the same official OCRBench v2 evaluation procedure.
-4. Summarize each method with a shared `summarize.py`.
-5. Compare results and document experimental conditions.
+## Which cluster are you running on?
 
-## Repository setup
+The same repository supports **two separate sets of full-run SLURM files**:
 
-This is the **new, clean repository**. Scripts, SLURM batch files, tests, and documentation will be introduced step by step after reviewing the existing implementations.
+- **A100**: `slurm/a100/` (Helix `gpu-single`)
+- **H100**: `slurm/h100/` (teammate's `gpu_h100` partition)
 
-**Data policy:** Do not commit the downloaded OCRBench images or raw dataset, pretrained model weights, Python environments, or large intermediate OCR outputs.
+Start with **[full setup, submissions and run order](docs/running_on_a100_h100.md)**.
+The Python inference code is shared; outputs, OCR texts and metrics are kept in
+separate `a100`/`h100` directories. Only allocated compute nodes may run GPU
+inference. The H100 batch templates have not yet been tested in the teammate's
+environment; the job prints and verifies actual GPU type before inference.
+
+## Workflow
+
+1. Prepare `data/benchmark/english_kie_400.json` from OCRBench v2 annotations.
+2. Prepare a hardware-specific OCR manifest (A100 or H100).
+3. Run direct VLMs at any time; run PaddleOCR **before** either OCR→LM job.
+4. Score each complete prediction file with the official OCRBench v2 evaluator.
+5. Use `src/step_04_evaluation/summarize_all.py` for already-scored outputs,
+   and report latency comparisons only within each GPU type.
+
+**Data policy:** Do not commit raw benchmark data, model weights, OCR intermediate
+outputs, raw predictions, GPU logs containing private paths, or Python environments.
+Historical source versions are preserved in the original repository; we have not
+modified that repository.
