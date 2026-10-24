@@ -16,9 +16,4 @@ cd "$SLURM_SUBMIT_DIR"
 export TOKENIZERS_PARALLELISM=false
 source slurm/common/verify_gpu.sh A100
 
-python tests/check_kie_inputs.py --input data/benchmark/english_kie_400.json
-uv run --no-sync python src/step_02_vlm/qwen35/run.py \
-  --input data/benchmark/english_kie_400.json \
-  --dataset-root data/OCRBench_v2 \
-  --max-new-tokens 384 \
-  --output results/by_model/qwen35_direct/a100/predictions.json
+uv run --no-sync python pipeline.py run --gpu a100 --stage qwen35

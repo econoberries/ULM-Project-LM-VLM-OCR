@@ -16,9 +16,4 @@ cd "$SLURM_SUBMIT_DIR"
 export TOKENIZERS_PARALLELISM=false
 source slurm/common/verify_gpu.sh A100
 
-# PaddlePaddle GPU and PaddleOCR must already be installed in .venv.
-python tests/check_kie_inputs.py --input data/benchmark/english_kie_400_ocr_a100.json
-uv run --no-sync python src/step_03_ocr_lm/run_ocr.py \
-  --input data/benchmark/english_kie_400_ocr_a100.json \
-  --dataset-root data/OCRBench_v2 \
-  --report data/ocr_output/a100/paddleocr_metrics.json
+uv run --no-sync python pipeline.py run --gpu a100 --stage paddleocr

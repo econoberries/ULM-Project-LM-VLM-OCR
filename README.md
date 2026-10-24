@@ -12,7 +12,7 @@ A reproducible comparison of **four methods on the same 400 English KIE records*
 The active pipeline is organized in execution order:
 
 ```text
-pipeline.py                 # One entry point: prepare, check, submit, score
+pipeline.py                 # One entry point: prepare, check, run, submit, score
 src/
   step_01_prepare/          # Select 400 KIE records; create OCR manifest
   step_02_vlm/              # Qwen3.5 and MiniCPM direct image inference
@@ -70,8 +70,12 @@ python pipeline.py submit --gpu a100 --stage ocr-qwen35
 python pipeline.py submit --gpu a100 --stage ocr-qwen25
 ```
 
-Submission invokes the corresponding `slurm/a100/` or `slurm/h100/`
-batch file. Compute jobs verify their real GPU with `nvidia-smi`.
+Submission invokes the corresponding `slurm/a100/` or `slurm/h100/` batch file. 
+Each job calls the **same** `pipeline.py run` action, so the inference command 
+is defined in only one place. On another CUDA machine without SLURM, use 
+`uv run --no-sync python pipeline.py run --gpu a100 --stage qwen35` 
+(or substitute the relevant hardware label and stage). 
+Compute jobs verify their GPU with `nvidia-smi`.
 H100 jobs use partition `gpu_h100` and request `gpu:1`; validate
 that specific GRES request on the teammate's cluster. A100 uses
 `gpu-single` and `gpu:A100:1`. Do not run large models on login nodes.

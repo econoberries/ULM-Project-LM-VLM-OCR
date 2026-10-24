@@ -16,8 +16,4 @@ cd "$SLURM_SUBMIT_DIR"
 export TOKENIZERS_PARALLELISM=false
 source slurm/common/verify_gpu.sh H100
 
-python tests/check_kie_inputs.py --input data/benchmark/english_kie_400.json
-uv run --no-sync python src/step_02_vlm/minicpm/run.py \
-  --input_file data/benchmark/english_kie_400.json \
-  --image_folder data/OCRBench_v2 \
-  --output_file results/by_model/minicpm_direct/h100/predictions.json
+uv run --no-sync python pipeline.py run --gpu h100 --stage minicpm

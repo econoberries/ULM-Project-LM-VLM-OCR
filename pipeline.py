@@ -41,6 +41,34 @@ def prepare(gpu):
              "--ocr-dir", f"data/ocr_output/{gpu}", "--expected-count", "400"])
     validate(gpu)
 
+def run_stage(gpu, stage):
+    """Run an inference stage on the current CUDA node, without SLURM."""
+    validate(gpu, require_ocr=stage.startswith("ocr-"))
+    benchmark = subset()
+    ocr_input = ocr_manifest(gpu)
+    outputs = Path("results/by_model")
+    commands = {
+        "qwen35": ["src/step_02_vlm/qwen35/run.py",
+                    "--input", benchmark, "--dataset-root", "data/OCRBench_v2",
+                    "--max-new-tokens", "384",
+                    "--output", outputs / "qwen35_direct" / gpu / "predictions.json"],
+        "minicpm": ["src/step_02_vlm/minicpm/run.py",
+                     "--input_file", benchmark, "--image_folder", "data/OCRBench_v2",
+                     "--output_file", outputs / "minicpm_direct" / gpu / "predictions.json"],
+        "paddleocr": ["src/step_03_ocr_lm/run_ocr.py",
+                       "--input", ocr_input, "--dataset-root", "data/OCRBench_v2",
+                       "--report", Path("data/ocr_output") / gpu / "paddleocr_metrics.json"],
+        "ocr-qwen35": ["src/step_03_ocr_lm/qwen35.py",
+                        "--input", ocr_input, "--dataset-root", ".",
+                        "--max-new-tokens", "384",
+                        "--output", outputs / "paddleocr_qwen35" / gpu / "predictions.json"],
+        "ocr-qwen25": ["src/step_03_ocr_lm/qwen25.py",
+                        "--input", ocr_input, "--dataset-root", ".",
+                        "--max-new-tokens", "384",
+                        "--output", outputs / "paddleocr_qwen25" / gpu / "predictions.json"],
+    }
+    execute([sys.executable, *commands[stage]])
+
 def submit(gpu, stage, dry_run=False):
     batch = Path("slurm") / gpu / STAGES[stage]
     if not (ROOT / batch).is_file():
@@ -83,11 +111,13 @@ def main():
     a = sub.add_parser("prepare", help="Prepare 400 records + hardware OCR manifest")
     b = sub.add_parser("check", help="Validate 400 records, images and optional OCR text")
     c = sub.add_parser("submit", help="Submit one GPU-specific SLURM job")
+    r = sub.add_parser("run", help="Run one stage directly on a CUDA compute node")
     d = sub.add_parser("score", help="Run official scorer and shared summary")
-    for item in (a, b, c, d):
+    for item in (a, b, c, r, d):
         item.add_argument("--gpu", choices=("a100", "h100"), required=True)
     b.add_argument("--require-ocr", action="store_true")
     c.add_argument("--stage", choices=tuple(STAGES), required=True)
+    r.add_argument("--stage", choices=tuple(STAGES), required=True)
     c.add_argument("--dry-run", action="store_true")
     d.add_argument("--model", choices=MODELS, required=True)
     d.add_argument("--evaluator", required=True, help="Path to official OCRBench v2 eval.py")
@@ -98,6 +128,8 @@ def main():
         validate(args.gpu, args.require_ocr)
     elif args.action == "submit":
         submit(args.gpu, args.stage, args.dry_run)
+    elif args.action == "run":
+        run_stage(args.gpu, args.stage)
     else:
         score(args.gpu, args.model, args.evaluator)
 
