@@ -20,9 +20,9 @@ logger = logging.getLogger(__name__)
 
 # src/vlm/minicpm/ -> repository root.
 REPO_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_INPUT_FILE = REPO_ROOT / "data" / "smoke_test" / "kie_en_smoke10.json"
+DEFAULT_INPUT_FILE = REPO_ROOT / "data" / "benchmark" / "english_kie_400.json"
 # image_path in the JSON is relative to this folder
-DEFAULT_IMAGE_FOLDER = REPO_ROOT / "data" / "smoke_test"
+DEFAULT_IMAGE_FOLDER = REPO_ROOT / "data" / "OCRBench_v2"
 
 # OCRB2, lines 39, 236
 KIE_TYPE = "key information extraction en"

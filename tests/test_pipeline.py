@@ -1,4 +1,4 @@
-"""Offline unit tests. Run: uv run python -m unittest discover -s src/vlm/qwen35 -p 'test_*.py'"""
+"""Offline tests of active preparation, inference helpers and summaries."""
 
 import importlib.util
 import json
@@ -6,19 +6,20 @@ from pathlib import Path
 import tempfile
 import unittest
 
-HERE = Path(__file__).parent
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent
 
 
-def load(name):
-    spec = importlib.util.spec_from_file_location(name, HERE / f"{name}.py")
+def load(name, relative_path):
+    spec = importlib.util.spec_from_file_location(name, ROOT / relative_path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
-prepare = load("prepare_kie")
-runner = load("run")
-summarize = load("summarize")
+prepare = load("prepare_kie", "src/step_01_prepare/prepare_kie.py")
+runner = load("qwen35_runner", "src/step_02_vlm/qwen35/run.py")
+summarize = load("summarize", "src/step_04_evaluation/summarize_all.py")
 
 
 class Qwen35OfflineTests(unittest.TestCase):

@@ -18,7 +18,7 @@ source slurm/common/verify_gpu.sh H100
 
 # Requires 400 PaddleOCR .txt outputs at manifest text_path.
 python tests/check_kie_inputs.py --input data/benchmark/english_kie_400_ocr_h100.json --require-ocr
-uv run --no-sync python src/step_03_ocr_lm/original/run_ocr-lm_qwen35.py \
+uv run --no-sync python src/step_03_ocr_lm/qwen35.py \
   --input data/benchmark/english_kie_400_ocr_h100.json \
   --dataset-root . \
   --max-new-tokens 384 \

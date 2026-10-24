@@ -51,6 +51,7 @@ def main():
     summary = summarize(rows, metadata)
     print(json.dumps(summary, indent=2))
     if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
         with args.output.open("w", encoding="utf-8") as handle:
             json.dump(summary, handle, indent=2)
 

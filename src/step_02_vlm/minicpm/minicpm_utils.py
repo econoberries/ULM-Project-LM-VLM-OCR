@@ -25,7 +25,7 @@ from transformers import AutoModelForImageTextToText, AutoProcessor, set_seed
 logger = logging.getLogger(__name__)
 
 # results/minicpm/ in the repository root
-DEFAULT_OUTPUT_FOLDER = Path(__file__).resolve().parents[3] / "results" / "minicpm"
+DEFAULT_OUTPUT_FOLDER = Path(__file__).resolve().parents[3] / "results" / "by_model" / "minicpm_direct"
 
 # ---------------------------------------------------------------------------
 # Model and inference settings
