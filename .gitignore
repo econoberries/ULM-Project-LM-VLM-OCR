@@ -1,0 +1,65 @@
+# Python environments, caches, and local tooling
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Local configuration and editor files
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+.DS_Store
+
+# Downloaded OCRBench v2 data and generated intermediate datasets
+# Commit preparation scripts and ID-only manifests instead.
+/data/OCRBench_v2/
+/data/benchmark/
+/data/ocr_output/
+/data/smoke_test/
+
+# Downloaded pretrained weights and model artifacts
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.gguf
+*.onnx
+/checkpoints/
+/model_weights/
+/.cache/
+/huggingface_cache/
+
+# Model-level raw predictions and scored files may contain benchmark
+# questions/answers and other copied dataset content.
+# Only sanitized summary.json files are eligible for Git tracking.
+/results/by_model/**/*.json
+!/results/by_model/**/summary.json
+/results/by_model/**/*.jsonl
+/results/by_model/**/*.txt
+/results/by_model/**/*.csv
+
+# Execution logs and temporary files
+*.log
+*.out
+*.err
+*.tmp
+*.swp
+*.swo
+/slurm_logs/
+/logs/
+/tmp/
+/temp/
+
+# Local evidence archives (may include raw outputs or cluster metadata)
+/evidence/*.zip
+/qwen35_helix_evidence*.zip
+
+# Intentionally NOT ignoring src/vlm, src/ocr_lm, or src/common.
+# Model-specific Python source files must remain version controlled.
