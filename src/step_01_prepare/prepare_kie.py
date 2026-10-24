@@ -37,6 +37,18 @@ def select_kie_examples(records, dataset_name=None, limit=None, seed=42):
 
     if limit is not None and len(selected) > limit:
         selected = random.Random(seed).sample(selected, limit)
+
+    # if ocr_data argument is not null, add text_path to each record
+     if ocr_data:
+         selected = [
+            {
+                **record,
+                "text_path": str(
+                    Path(ocr_data) / f"{Path(record['image_path']).stem}.txt"
+                ),
+            }
+            for record in selected
+        ]   
     return selected
 
 
@@ -69,6 +81,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True, help="Original OCRBench_v2.json")
     parser.add_argument("--output", type=Path, required=True, help="Prepared English KIE JSON")
+    # for OCR: Add text_path without modifying the original source records.
+    parser.add_argument("--ocr_data", type=Path, required=False, help="where ocr_output is located")
     parser.add_argument("--dataset-name", help="Optional source dataset, e.g. POIE")
     parser.add_argument("--limit", type=int, help="Optional number of examples for a pilot")
     parser.add_argument("--seed", type=int, default=42, help="Seed for pilot sampling")
