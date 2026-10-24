@@ -1,0 +1,20 @@
+{
+  "samples": 400,
+  "inference_failures": 0,
+  "mean_latency_seconds": 3.17417025,
+  "median_latency_seconds": 3.01375,
+  "p95_latency_seconds": 4.821160000000001,
+  "min_latency_seconds": 0.9113,
+  "max_latency_seconds": 14.3538,
+  "total_inference_seconds": 1269.6681,
+  "mean_output_tokens": 105.8825,
+  "mean_peak_allocated_gpu_gib": 2.7672289669513703,
+  "maximum_peak_allocated_gpu_gib": 3.745238780975342,
+  "valid_json_documents": 363,
+  "strict_json_validity_rate": 0.9075,
+  "code_fenced_documents": 3,
+  "model_loading_seconds": 9.409,
+  "gpu_names": [
+    "NVIDIA A100-SXM4-40GB"
+  ]
+}

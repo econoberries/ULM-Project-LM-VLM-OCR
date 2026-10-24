@@ -1,0 +1,27 @@
+{
+  "model_id": "openbmb/MiniCPM-V-4.6",
+  "revision": "36f34a661a4bd35d0dc2294cb044d2584646c7d3",
+  "input_file": "data/OCRBench_v2/OCRBench_v2.json",
+  "image_folder": "data/OCRBench_v2",
+  "num_examples": 400,
+  "num_predicted": 400,
+  "failed_ids": [],
+  "output_file": "<historical-cluster-path-redacted>",
+  "model_load_seconds": 9.409,
+  "started_utc": "2026-10-24T01:41:49.332996+00:00",
+  "torch_version": "2.14.1+cu126",
+  "cuda_device_names": [
+    "NVIDIA A100-SXM4-40GB"
+  ],
+  "device": "cuda:0",
+  "dtype": "torch.bfloat16",
+  "inference_settings": {
+    "downsample_mode": "16x",
+    "max_slice_nums": 36,
+    "max_new_tokens": 512,
+    "do_sample": false,
+    "num_beams": 1,
+    "enable_thinking": false,
+    "seed": 0
+  }
+}
