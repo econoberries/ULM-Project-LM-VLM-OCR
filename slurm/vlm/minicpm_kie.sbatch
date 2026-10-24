@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
-#SBATCH --job-name=minicpm-kie
+#SBATCH --job-name=minicpm-vlm-kie
 #SBATCH --partition=gpu-single
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --gres=gpu:A100:1
 #SBATCH --mem=64G
-#SBATCH --time=02:00:00
+#SBATCH --time=01:00:00
 #SBATCH --output=%x-%j.out
 
-# A100 to match the Qwen3.5 timing run.
+# Run from repository root; submit with: sbatch <this-file>
 set -euo pipefail
 cd "$SLURM_SUBMIT_DIR"
 export TOKENIZERS_PARALLELISM=false
 
-uv run python src/vlm/minicpm/run.py \
-  --input_file data/OCRBench_v2/OCRBench_v2.json \
-  --image_folder data/OCRBench_v2
+# This existing MiniCPM runner accepts a prefiltered benchmark JSON.
+uv run python src/step_02_vlm/minicpm/run.py \
+  --input_file data/benchmark/english_kie_400.json \
+  --image_folder data/OCRBench_v2 \
+  --output_file results/by_model/minicpm_direct/predictions.json
