@@ -46,6 +46,14 @@ uv run python src/step_01_prepare/prepare_ocr_manifest.py \
 
 The new repository has no dedicated 10-document pilot batch file. Historical full-benchmark results already exist; before rerunning, verify paths offline and optionally use a one-document GPU smoke test from a temporary input JSON. The production batch files always read the complete 400-example manifest.
 
+Before submitting the Qwen3.5 direct VLM job, run this **read-only, no-GPU** preflight from the repository root after preparing the 400-document benchmark:
+
+```bash
+uv run --locked python tests/check_qwen_setup.py --check-deps
+```
+
+A PASS verifies that the expected repository files, Python 3.12 environment, basic packages, 400 manifest records, and image paths are available. It does **not** confirm access to Qwen model weights, CUDA compatibility, or successful GPU inference. A FAIL reports what needs correction.
+
 Example: `sbatch slurm/vlm/qwen35_kie.sbatch` (after validating its prerequisites).
 
 - The OCRBench v2 annotation JSON and extracted images must exist locally.
