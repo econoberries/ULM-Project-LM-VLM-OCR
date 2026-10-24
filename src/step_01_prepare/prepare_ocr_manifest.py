@@ -2,7 +2,7 @@
 
 Run from the repository root *after* prepare_kie.py:
 
-    python src/prepare/prepare_ocr_manifest.py \
+    python src/step_01_prepare/prepare_ocr_manifest.py \
       --input data/benchmark/english_kie_400.json \
       --output data/benchmark/english_kie_400_ocr.json \
       --expected-count 400
