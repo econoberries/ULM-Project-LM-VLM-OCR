@@ -96,7 +96,7 @@ def main():
 
     with args.input.open(encoding="utf-8") as file:
         original = json.load(file)
-    selected = select_kie_examples(original, args.dataset_name, args.limit, args.seed)
+    selected = select_kie_examples(original, args.dataset_name, args.limit, args.seed, args.ocr_data)
     validate_selection(selected, args.expected_count)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
