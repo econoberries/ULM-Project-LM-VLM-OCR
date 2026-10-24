@@ -157,7 +157,9 @@ def main():
     # Import here so validation can run without installing PaddleOCR locally.
     from paddleocr import PaddleOCR
     load_start = time.perf_counter()
-    ocr = PaddleOCR(lang="en", use_doc_orientation_classify=False,
+    # PaddleOCR 3.x supports device="gpu:0"; require GPU inference rather
+    # than silently falling back to CPU on the allocated A100/H100 node.
+    ocr = PaddleOCR(lang="en", device="gpu:0", use_doc_orientation_classify=False,
                     use_doc_unwarping=False, use_textline_orientation=False)
     load_seconds = time.perf_counter() - load_start
     print(f"PaddleOCR loaded in {load_seconds:.2f}s; processing {len(pending)} documents", flush=True)
@@ -194,7 +196,7 @@ def main():
             info.update(status="error", error=f"{type(error).__name__}: {error}")
             print(f"[{i+1}/{len(selected)}] ERROR {row['dataset_name']} {row['id']}: {error}", flush=True)
         metrics[target.as_posix()] = info
-        save_json(args.report, {"ocr_engine": "PaddleOCR", "model_load_seconds": round(load_seconds, 4),
+        save_json(args.report, {"ocr_engine": "PaddleOCR", "device": "gpu:0", "model_load_seconds": round(load_seconds, 4),
                                 "records": list(metrics.values())})
 
     failures = [x for x in selected if metrics.get(x["text_path"], {}).get("status") != "ok"]
